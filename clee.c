@@ -7,14 +7,22 @@ int clee_start(const char *filename, char *const argv[], char *const envp[]) {
             /* error */
             return 0;
         case 0:
-            ptrace(PTRACE_TRACEME, NULL, NULL, NULL);
+            if (ptrace(PTRACE_TRACEME, NULL, NULL, NULL) == -1)
+            {
+                /* ptrace error */
+                _exit(1);
+            }
             execve(filename, argv, envp);   // causes SIGTRAP
-            /* error */
-            return 0;
+            /* execve error */
+            _exit(1);
         default: ;
             /* parent */
             int status;
-            waitpid(pid, &status, 0);
-            return WIFSTOPPED(status);  // success if child was stopped
+            if (waitpid(pid, &status, 0) == -1)
+            {
+                /* waitpid error */
+                return 0;
+            }
+            return WIFSTOPPED(status);  // fail on child ptrace/execve error
     }
 }
