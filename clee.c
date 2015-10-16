@@ -38,5 +38,14 @@ int clee_start(const char *filename, char *const argv[], char *const envp[]) {
     }
 }
 
+void clee_signal_chld(int signo) {
+    pid_t child;
+    int status;
+    if ((child = waitpid(tracee, &status, WNOHANG|WUNTRACED|WCONTINUED)) == -1) {
+        /* waitpid failure */
+        return; /* TODO failure check */
+    }
+}
+
 void clee_status(clee_tracee_status tracee_status, int status) {
 }

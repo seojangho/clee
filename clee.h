@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
+#include <signal.h>
 
 /* tracee status tracking */
 typedef enum {
@@ -15,6 +16,8 @@ typedef enum {
 clee_tracee_status;
 
 void clee_status(clee_tracee_status tracee_status, int status);
+
+void clee_signal_chld(int signo);
 
 /* create child process using fork and execve, and ptrace it
  * Error: return 0 and errno
