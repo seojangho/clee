@@ -2,6 +2,15 @@
 
 static pid_t tracee;
 
+int clee_init() {
+    errno = 0;
+    signal(SIGCHLD, clee_signal_chld);
+    if (errno) {
+        return 0;
+    }
+    return 1;
+}
+
 int clee_start(const char *filename, char *const argv[], char *const envp[]) {
     pid_t pid;
     switch (pid = fork()) {
@@ -26,13 +35,13 @@ int clee_start(const char *filename, char *const argv[], char *const envp[]) {
                 /* waitpid error */
                 return 0;
             }
-            return WIFSTOPPED(status);  // fail on child ptrace/execve error
             if (WIFSTOPPED(status)) {
-                clee_status(stopped, status);
+                clee_status(status);
                 return 1;
             }
             else
             {
+                // fail on child ptrace/execve error
                 return 0;
             }
     }
@@ -43,9 +52,15 @@ void clee_signal_chld(int signo) {
     int status;
     if ((child = waitpid(tracee, &status, WNOHANG|WUNTRACED|WCONTINUED)) == -1) {
         /* waitpid failure */
-        return; /* TODO failure check */
+        assert(0);
     }
+    if (child == 0)
+    {
+        /* no change */
+        return;
+    }
+    clee_status(status);
 }
 
-void clee_status(clee_tracee_status tracee_status, int status) {
+void clee_status(int status) {
 }
