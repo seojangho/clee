@@ -6,6 +6,16 @@
 #include <sys/wait.h>
 #include <sys/ptrace.h>
 
+/* tracee status tracking */
+typedef enum {
+    started,
+    stopped,
+    terminated,
+}
+clee_tracee_status;
+
+void clee_status(clee_tracee_status tracee_status, int status);
+
 /* create child process using fork and execve, and ptrace it
  * Error: return 0 and errno
  * users must close unwanted file handers/etc */

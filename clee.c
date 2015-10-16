@@ -27,5 +27,16 @@ int clee_start(const char *filename, char *const argv[], char *const envp[]) {
                 return 0;
             }
             return WIFSTOPPED(status);  // fail on child ptrace/execve error
+            if (WIFSTOPPED(status)) {
+                clee_status(stopped, status);
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
     }
+}
+
+void clee_status(clee_tracee_status tracee_status, int status) {
 }
