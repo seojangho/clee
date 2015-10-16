@@ -61,5 +61,14 @@ void clee_signal_chld(int signo) {
     clee_status(status);
 }
 
+pid_t clee_wait(int *status, int options) {
+    pid_t pid;
+    if ((pid = waitpid(tracee, status, options)) == -1) {
+        CLEE_ERROR;
+    }
+    clee_status(*status);
+    return pid;
+}
+
 void clee_status(int status) {
 }

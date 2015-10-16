@@ -21,4 +21,6 @@ void clee_start(const char *filename, char *const argv[], char *const envp[]);
 
 void clee_init();
 
+pid_t clee_wait(int *status, int options);
+
 #endif
