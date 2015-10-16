@@ -1,5 +1,7 @@
 #include "clee.h"
 
+static pid_t tracee;
+
 int clee_start(const char *filename, char *const argv[], char *const envp[]) {
     pid_t pid;
     switch (pid = fork()) {
@@ -15,8 +17,9 @@ int clee_start(const char *filename, char *const argv[], char *const envp[]) {
             execve(filename, argv, envp);   // causes SIGTRAP
             /* execve error */
             _exit(1);
-        default: ;
+        default:
             /* parent */
+            tracee = pid;
             int status;
             if (waitpid(pid, &status, 0) == -1)
             {
