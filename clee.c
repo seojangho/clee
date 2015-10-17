@@ -68,11 +68,14 @@ void clee_main() {
     pid_t pid;
     int status;
     while ((pid = waitpid(-1, &status, __WALL)) > 0) {
-        int sig2send = 0;
         if (WIFSTOPPED(status)) {
             int const cause = WSTOPSIG(status);
-            if (cause != SIGTRAP) {
+            int sig2send = 0;
+            if (cause != SIGTRAP && cause != (SIGTRAP|0x80)) {
                 sig2send = cause;
+            }
+            if (ptrace(PTRACE_SYSCALL, pid, NULL, sig2send) == -1) {
+                CLEE_ERROR;
             }
         } else if (WIFEXITED(status)) {
             int const exit_code = WEXITSTATUS(status);
@@ -82,14 +85,6 @@ void clee_main() {
         } else {
             CLEE_ERROR;
         }
-
-        /* continue */
-        if (WIFSTOPPED(status)) {
-            if (ptrace(PTRACE_SYSCALL, pid, NULL, sig2send) == -1) {
-                CLEE_ERROR;
-            }
-        }
-
     }
     if (pid == -1 && errno != ECHILD) {
         CLEE_ERROR;
