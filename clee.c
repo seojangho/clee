@@ -40,7 +40,7 @@ void clee_start(const char *filename, char *const argv[], char *const envp[]) {
             }
             else
             {
-                // fail on child ptrace/execve error
+                /* fail on child ptrace/execve error */
                 CLEE_ERROR;
             }
     }
