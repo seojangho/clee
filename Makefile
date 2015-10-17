@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g
+CFLAGS = -g -std=c99
 OBJS = clee.o interposition.o
 TARGET = interposition
 
