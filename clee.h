@@ -26,4 +26,7 @@ void clee_main();
 void clee_signal_handler();
 void clee_syscall(pid_t pid);
 
+int clee_syscall_num();
+const char* clee_syscall_name();
+
 #endif

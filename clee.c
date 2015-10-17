@@ -1,6 +1,7 @@
 #include "clee.h"
 
 static _Bool tracing;
+static struct user_regs_struct syscall_regs;
 
 void clee_init() {
     tracing = false;
@@ -90,13 +91,20 @@ void clee_main() {
 }
 
 void clee_syscall(pid_t pid) {
-    struct user_regs_struct regs;
-    if (ptrace(PTRACE_GETREGS, pid, 0, &regs) == -1) {
+    if (ptrace(PTRACE_GETREGS, pid, 0, &syscall_regs) == -1) {
         CLEE_ERROR;
     }
-    if (regs.rax == -ENOSYS) {
-        printf("%s\n", clee_syscall_namelookup(regs.orig_rax));
+    if (syscall_regs.rax == -ENOSYS) {
+    } else {
     }
+}
+
+int clee_syscall_num() {
+    return syscall_regs.orig_rax;
+}
+
+const char* clee_syscall_name() {
+    return clee_syscall_namelookup(syscall_regs.orig_rax);
 }
 
 void clee_signal_handler(int sig) {
