@@ -42,6 +42,8 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
                     CLEE_ERROR;
                 }
                 tracing = true;
+                ptrace(PTRACE_CONT, pid, NULL, 0);
+                clee_main();
                 return pid;
             }
             else
@@ -49,5 +51,29 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
                 /* fail on child ptrace/execve error */
                 CLEE_ERROR;
             }
+    }
+}
+
+void clee_main() {
+    pid_t pid;
+    int status;
+    while ((pid = waitpid(-1, &status, WCONTINUED|__WALL)) > 0) {
+        int sig2send = 0;
+        if (WIFSTOPPED(status)) {
+            int const cause = WSTOPSIG(status);
+            if (cause != SIGTRAP) {
+                sig2send = cause;
+            }
+        } else if (WIFEXITED(status)) {
+            int const exit_code = WEXITSTATUS(status);
+        } else if (WIFSIGNALED(status)) {
+            int const cause = WTERMSIG(status);
+        } else if (WIFCONTINUED(status)) {
+        } else {
+            CLEE_ERROR;
+        }
+    }
+    if (pid == -1 && errno != ECHILD) {
+        CLEE_ERROR;
     }
 }
