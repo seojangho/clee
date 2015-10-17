@@ -2,6 +2,7 @@
 
 static _Bool tracing;
 static struct user_regs_struct syscall_regs;
+static pid_t syscall_pid;
 
 void clee_init() {
     tracing = false;
@@ -94,9 +95,16 @@ void clee_syscall(pid_t pid) {
     if (ptrace(PTRACE_GETREGS, pid, 0, &syscall_regs) == -1) {
         CLEE_ERROR;
     }
+    syscall_pid = pid;
     if (syscall_regs.rax == -ENOSYS) {
+        clee_onSyscallEntry();
     } else {
+        clee_onSyscallExit();
     }
+}
+
+pid_t clee_syscall_pid() {
+    return syscall_pid;
 }
 
 int clee_syscall_num() {

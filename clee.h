@@ -10,7 +10,6 @@
 #include <sys/ptrace.h>
 #include <sys/user.h>
 #include <signal.h>
-#include <stdio.h>
 
 #include "syscalls.h"
 
@@ -27,6 +26,11 @@ void clee_signal_handler();
 void clee_syscall(pid_t pid);
 
 int clee_syscall_num();
+pid_t clee_syscall_pid();
 const char* clee_syscall_name();
+
+/* user defined */
+void clee_onSyscallEntry();
+void clee_onSyscallExit();
 
 #endif
