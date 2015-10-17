@@ -8,7 +8,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
+#include <sys/user.h>
 #include <signal.h>
+#include <stdio.h>
 
 #define CLEE_ERROR    {assert(0);}
 
@@ -20,5 +22,6 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]);
 void clee_init();
 void clee_main();
 void clee_signal_handler();
+void clee_syscall(pid_t pid);
 
 #endif

@@ -49,7 +49,7 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
                     CLEE_ERROR;
                 }
                 tracing = true;
-                ptrace(PTRACE_CONT, pid, NULL, 0);
+                ptrace(PTRACE_SYSCALL, pid, NULL, 0);
                 clee_main();
                 return pid;
             }
@@ -71,6 +71,9 @@ void clee_main() {
         if (WIFSTOPPED(status)) {
             int const cause = WSTOPSIG(status);
             int sig2send = 0;
+            if (cause == (SIGTRAP|0x80)) {
+                clee_syscall(pid);
+            }
             if (cause != SIGTRAP && cause != (SIGTRAP|0x80)) {
                 sig2send = cause;
             }
@@ -88,6 +91,16 @@ void clee_main() {
     }
     if (pid == -1 && errno != ECHILD) {
         CLEE_ERROR;
+    }
+}
+
+void clee_syscall(pid_t pid) {
+    struct user_regs_struct regs;
+    if (ptrace(PTRACE_GETREGS, pid, 0, &regs) == -1) {
+        CLEE_ERROR;
+    }
+    if (regs.rax == -ENOSYS) {
+        printf("%d\n", regs.orig_rax);
     }
 }
 
