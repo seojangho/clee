@@ -98,6 +98,9 @@ void clee_syscall(pid_t pid) {
     syscall_pid = pid;
     if (syscall_regs.rax == -ENOSYS) {
         clee_onSyscallEntry();
+        if (ptrace(PTRACE_SETREGS, pid, 0, &syscall_regs) == -1) {
+            CLEE_ERROR;
+        }
     } else {
         clee_onSyscallExit();
     }
@@ -107,12 +110,60 @@ pid_t clee_syscall_pid() {
     return syscall_pid;
 }
 
-int clee_syscall_num() {
+reg clee_syscall_num() {
     return syscall_regs.orig_rax;
 }
 
 const char* clee_syscall_name() {
     return clee_syscall_namelookup(syscall_regs.orig_rax);
+}
+
+reg clee_get_arg(int n) {
+    switch (n) {
+        case 0:
+            return syscall_regs.rdi;
+        case 1:
+            return syscall_regs.rsi;
+        case 2:
+            return syscall_regs.rdx;
+        case 3:
+            return syscall_regs.r10;
+        case 4:
+            return syscall_regs.r8;
+        case 5:
+            return syscall_regs.r9;
+        default:
+            CLEE_ERROR;
+    }
+}
+
+void clee_set_arg(int n, reg value) {
+    switch (n) {
+        case 0:
+            syscall_regs.rdi = value;
+            return;
+        case 1:
+            syscall_regs.rsi = value;
+            return;
+        case 2:
+            syscall_regs.rdx = value;
+            return;
+        case 3:
+            syscall_regs.r10 = value;
+            return;
+        case 4:
+            syscall_regs.r8 = value;
+            return;
+        case 5:
+            syscall_regs.r9 = value;
+            return;
+        default:
+            CLEE_ERROR;
+    }
+}
+
+reg clee_syscall_result() {
+    return syscall_regs.rax;
 }
 
 void clee_signal_handler(int sig) {
