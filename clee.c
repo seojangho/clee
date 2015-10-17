@@ -95,7 +95,7 @@ void clee_syscall(pid_t pid) {
         CLEE_ERROR;
     }
     if (regs.rax == -ENOSYS) {
-        printf("%s\n", clee_syscall_name(regs.orig_rax));
+        printf("%s\n", clee_syscall_namelookup(regs.orig_rax));
     }
 }
 
