@@ -1,6 +1,7 @@
 #ifndef CLEE_H
 #define CLEE_H
 
+#include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
@@ -11,16 +12,17 @@
 
 #define CLEE_ERROR    {assert(0);}
 
+/* child process status tracker */
 void clee_status(int status);
-
 void clee_signal_chld(int signo);
 
 /* create child process using fork and execve, and ptrace it
  * users must close unwanted file handers/etc */
 void clee_start(const char *filename, char *const argv[], char *const envp[]);
 
-void clee_init();
 
+void clee_init();
 pid_t clee_wait(int *status, int options);
+void clee_continue();
 
 #endif
