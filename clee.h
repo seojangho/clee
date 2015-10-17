@@ -12,6 +12,8 @@
 #include <signal.h>
 #include <stdio.h>
 
+#include "syscalls.h"
+
 #define CLEE_ERROR    {assert(0);}
 
 /* create child process using fork and execve, and ptrace it

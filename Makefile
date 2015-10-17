@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -std=c99
-OBJS = clee.o interposition.o
+OBJS = clee.o interposition.o syscalls.o
 TARGET = interposition
 
 .SUFFIXES : .c .o
@@ -13,5 +13,6 @@ $(TARGET) : $(OBJS)
 clean :
 	rm -f $(OBJS) $(TARGET)
 
-clee.o : clee.h clee.c
+clee.o : clee.h syscalls.h clee.c
+syscalls.o: syscalls.h
 interposition.o : interposition.h clee.h interposition.c
