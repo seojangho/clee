@@ -1,4 +1,4 @@
 .*.swp
-clee.o
+*.o
+*.out
 interposition
-interposition.o
