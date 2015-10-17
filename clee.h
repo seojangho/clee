@@ -18,6 +18,16 @@
 
 typedef uint64_t reg;
 
+typedef enum {
+    syscall_entry,
+    syscall_exit,
+} clee_events;
+
+typedef struct {
+    void (*syscall_entry)();
+    void (*syscall_exit)();
+} clee_event_handlers;
+
 /* create child process using fork and execve, and ptrace it
  * users must close unwanted file handers/etc */
 pid_t clee_start(const char *filename, char *const argv[], char *const envp[]);
@@ -35,8 +45,8 @@ reg clee_get_arg(int n);
 void clee_set_arg(int n, reg value);
 reg clee_syscall_result();
 
-/* user defined */
-void clee_onSyscallEntry();
-void clee_onSyscallExit();
+/* triggers */
+void (*clee_set_trigger(clee_events ev, void (*handler)()))();
+void (*clee_get_trigger(clee_events ev))();
 
 #endif

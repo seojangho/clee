@@ -3,9 +3,12 @@
 static _Bool tracing;
 static struct user_regs_struct syscall_regs;
 static pid_t syscall_pid;
+static clee_event_handlers event_handlers;
 
 void clee_init() {
     tracing = false;
+    event_handlers.syscall_entry = NULL;
+    event_handlers.syscall_exit = NULL;
 }
 
 pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
@@ -97,12 +100,16 @@ void clee_syscall(pid_t pid) {
     }
     syscall_pid = pid;
     if (syscall_regs.rax == -ENOSYS) {
-        clee_onSyscallEntry();
+        if (event_handlers.syscall_entry != NULL) {
+            (event_handlers.syscall_entry)();
+        }
         if (ptrace(PTRACE_SETREGS, pid, 0, &syscall_regs) == -1) {
             CLEE_ERROR;
         }
     } else {
-        clee_onSyscallExit();
+        if (event_handlers.syscall_exit != NULL) {
+            (event_handlers.syscall_exit)();
+        }
     }
 }
 
@@ -164,6 +171,33 @@ void clee_set_arg(int n, reg value) {
 
 reg clee_syscall_result() {
     return syscall_regs.rax;
+}
+
+void (*clee_set_trigger(clee_events ev, void (*handler)()))() {
+    void (*old_handler)();
+    switch (ev) {
+        case syscall_entry:
+            old_handler = event_handlers.syscall_entry;
+            event_handlers.syscall_entry = handler;
+            return old_handler;
+        case syscall_exit:
+            old_handler = event_handlers.syscall_exit;
+            event_handlers.syscall_exit = handler;
+            return old_handler;
+        default:
+            CLEE_ERROR;
+    }
+}
+
+void (*clee_get_trigger(clee_events ev))() {
+    switch (ev) {
+        case syscall_entry:
+            return event_handlers.syscall_entry;
+        case syscall_exit:
+            return event_handlers.syscall_exit;
+        default:
+            CLEE_ERROR;
+    }
 }
 
 void clee_signal_handler(int sig) {
