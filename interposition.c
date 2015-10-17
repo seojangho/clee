@@ -3,10 +3,10 @@
 
 int main(int argc, char **argv) {
     clee_init();
-    clee_start(argv[1], argv+1, NULL);
+    pid_t main_process = clee_start(argv[1], argv+1, NULL);
     printf("continuing...\n");
-    clee_continue();
+    clee_continue(main_process);
     printf("continued\n");
-    clee_wait(NULL, 0);
+    clee_wait(main_process, NULL, 0);
     return 0;
 }
