@@ -58,20 +58,34 @@ void clee_main() {
     pid_t pid;
     int status;
     while ((pid = waitpid(-1, &status, WCONTINUED|__WALL)) > 0) {
+        _Bool continuing;
+        enum __ptrace_request behavior = PTRACE_CONT;
         int sig2send = 0;
         if (WIFSTOPPED(status)) {
+            continuing = true;
             int const cause = WSTOPSIG(status);
             if (cause != SIGTRAP) {
                 sig2send = cause;
             }
         } else if (WIFEXITED(status)) {
+            continuing = false;
             int const exit_code = WEXITSTATUS(status);
         } else if (WIFSIGNALED(status)) {
+            continuing = false;
             int const cause = WTERMSIG(status);
         } else if (WIFCONTINUED(status)) {
+            continuing = true;
         } else {
             CLEE_ERROR;
         }
+
+        /* continue */
+        if (continuing) {
+            if (ptrace(behavior, pid, NULL, sig2send) == -1) {
+                CLEE_ERROR;
+            }
+        }
+
     }
     if (pid == -1 && errno != ECHILD) {
         CLEE_ERROR;
