@@ -3,11 +3,6 @@
 static _Bool tracing;
 
 void clee_init() {
-    errno = 0;
-    signal(SIGCHLD, clee_signal_chld);
-    if (errno) {
-        CLEE_ERROR;
-    }
     tracing = false;
 }
 
@@ -47,7 +42,6 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
                     CLEE_ERROR;
                 }
                 tracing = true;
-                clee_status(pid, status);
                 return pid;
             }
             else
@@ -55,53 +49,5 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
                 /* fail on child ptrace/execve error */
                 CLEE_ERROR;
             }
-    }
-}
-
-void clee_signal_chld(int signo) {
-    if (!tracing) {
-        return;
-    }
-    pid_t pid;
-    int status;
-    while ((pid = waitpid(-1, &status, WNOHANG|WUNTRACED|WCONTINUED|__WALL)) > 0) {
-        clee_status(pid, status);
-    }
-    if (pid == -1 && errno != ECHILD) {
-        /* waitpid failure */
-        CLEE_ERROR;
-    }
-}
-
-pid_t clee_wait(pid_t pid_arg, int *user_status, int options) {
-    if (!tracing) {
-        CLEE_ERROR;
-    }
-    pid_t pid;
-    int status;
-    if ((pid = waitpid(pid_arg, &status, options)) == -1) {
-        CLEE_ERROR;
-    }
-    if (user_status != NULL) {
-        *user_status = status;
-    }
-    if (pid > 0) {
-        clee_status(pid, status);
-    }
-    return pid;
-}
-
-void clee_continue(pid_t pid) {
-    if (!tracing) {
-        CLEE_ERROR;
-    }
-    ptrace(PTRACE_CONT, pid, NULL, NULL);
-}
-
-void clee_status(pid_t pid, int status) {
-    if (!tracing) {
-        CLEE_ERROR;
-    }
-    if (WIFEXITED(status) || WIFSIGNALED(status)) {
     }
 }
