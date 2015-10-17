@@ -23,10 +23,11 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
             /* error */
             CLEE_ERROR;
         case 0:
+            /*
             if (setpgid(0, 0) == -1) {
-                /* setpgid error */
                 _exit(1);
             }
+            */
             if (ptrace(PTRACE_TRACEME, NULL, NULL, NULL) == -1)
             {
                 /* ptrace error */
@@ -105,6 +106,6 @@ void clee_main() {
 
 void clee_signal_handler(int sig) {
     if (sig == SIGTSTP || sig == SIGINT) {
-        kill(-tracee_pgid, sig);
+        // kill(-tracee_pgid, sig);
     }
 }
