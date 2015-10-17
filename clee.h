@@ -19,5 +19,6 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]);
 
 void clee_init();
 void clee_main();
+void clee_signal_handler();
 
 #endif

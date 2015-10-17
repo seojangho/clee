@@ -1,9 +1,16 @@
 #include "clee.h"
 
 static _Bool tracing;
+static pid_t tracee_pgid;
 
 void clee_init() {
     tracing = false;
+    if (signal(SIGINT, clee_signal_handler) == SIG_ERR) {
+        CLEE_ERROR;
+    }
+    if (signal(SIGTSTP, clee_signal_handler) == SIG_ERR) {
+        CLEE_ERROR;
+    }
 }
 
 pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
@@ -16,6 +23,10 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
             /* error */
             CLEE_ERROR;
         case 0:
+            if (setpgid(0, 0) == -1) {
+                /* setpgid error */
+                _exit(1);
+            }
             if (ptrace(PTRACE_TRACEME, NULL, NULL, NULL) == -1)
             {
                 /* ptrace error */
@@ -24,8 +35,9 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
             execve(filename, argv, envp);   // causes SIGTRAP
             /* execve error */
             _exit(1);
-        default: ;
+        default:
             /* parent */
+            tracee_pgid = pid;
             int status;
             if (waitpid(pid, &status, 0) == -1)
             {
@@ -55,6 +67,9 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
 }
 
 void clee_main() {
+    if (!tracing) {
+        CLEE_ERROR;
+    }
     pid_t pid;
     int status;
     while ((pid = waitpid(-1, &status, WCONTINUED|__WALL)) > 0) {
@@ -85,5 +100,11 @@ void clee_main() {
     }
     if (pid == -1 && errno != ECHILD) {
         CLEE_ERROR;
+    }
+}
+
+void clee_signal_handler(int sig) {
+    if (sig == SIGTSTP || sig == SIGINT) {
+        kill(-tracee_pgid, sig);
     }
 }
