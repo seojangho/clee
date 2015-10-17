@@ -2,13 +2,18 @@
 
 static _Bool tracing;
 static struct user_regs_struct syscall_regs;
-static pid_t syscall_pid;
+static pid_t event_pid;
 static clee_event_handlers event_handlers;
+static int exit_code;
+static int terminate_cause;
 
 void clee_init() {
     tracing = false;
     event_handlers.syscall_entry = NULL;
     event_handlers.syscall_exit = NULL;
+    event_handlers.exited = NULL;
+    event_handlers.terminated = NULL;
+    event_handlers.continued = NULL;
 }
 
 pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
@@ -67,6 +72,7 @@ void clee_main() {
     pid_t pid;
     int status;
     while ((pid = waitpid(-1, &status, __WALL)) > 0) {
+        event_pid = pid;
         if (WIFSTOPPED(status)) {
             int const cause = WSTOPSIG(status);
             int sig2send = 0;
@@ -80,10 +86,19 @@ void clee_main() {
                 CLEE_ERROR;
             }
         } else if (WIFEXITED(status)) {
-            int const exit_code = WEXITSTATUS(status);
+            exit_code = WEXITSTATUS(status);
+            if (event_handlers.exited != NULL) {
+                (event_handlers.exited)();
+            }
         } else if (WIFSIGNALED(status)) {
-            int const cause = WTERMSIG(status);
+            terminate_cause = WTERMSIG(status);
+            if (event_handlers.terminated != NULL) {
+                (event_handlers.terminated)();
+            }
         } else if (WIFCONTINUED(status)) {
+            if (event_handlers.continued != NULL) {
+                (event_handlers.continued)();
+            }
         } else {
             CLEE_ERROR;
         }
@@ -94,16 +109,15 @@ void clee_main() {
     tracing = false;
 }
 
-void clee_syscall(pid_t pid) {
-    if (ptrace(PTRACE_GETREGS, pid, 0, &syscall_regs) == -1) {
+void clee_syscall() {
+    if (ptrace(PTRACE_GETREGS, event_pid, 0, &syscall_regs) == -1) {
         CLEE_ERROR;
     }
-    syscall_pid = pid;
     if (syscall_regs.rax == -ENOSYS) {
         if (event_handlers.syscall_entry != NULL) {
             (event_handlers.syscall_entry)();
         }
-        if (ptrace(PTRACE_SETREGS, pid, 0, &syscall_regs) == -1) {
+        if (ptrace(PTRACE_SETREGS, event_pid, 0, &syscall_regs) == -1) {
             CLEE_ERROR;
         }
     } else {
@@ -113,8 +127,8 @@ void clee_syscall(pid_t pid) {
     }
 }
 
-pid_t clee_syscall_pid() {
-    return syscall_pid;
+pid_t clee_pid() {
+    return event_pid;
 }
 
 reg clee_syscall_num() {
@@ -123,6 +137,14 @@ reg clee_syscall_num() {
 
 const char* clee_syscall_name() {
     return clee_syscall_namelookup(syscall_regs.orig_rax);
+}
+
+int clee_exit_code() {
+    return exit_code;
+}
+
+int clee_terminate_cause() {
+    return terminate_cause;
 }
 
 reg clee_get_arg(int n) {
@@ -184,6 +206,18 @@ void (*clee_set_trigger(clee_events ev, void (*handler)()))() {
             old_handler = event_handlers.syscall_exit;
             event_handlers.syscall_exit = handler;
             return old_handler;
+        case exited:
+            old_handler = event_handlers.exited;
+            event_handlers.exited = handler;
+            return old_handler;
+        case terminated:
+            old_handler = event_handlers.terminated;
+            event_handlers.terminated = handler;
+            return old_handler;
+        case continued:
+            old_handler = event_handlers.continued;
+            event_handlers.continued = handler;
+            return old_handler;
         default:
             CLEE_ERROR;
     }
@@ -195,6 +229,12 @@ void (*clee_get_trigger(clee_events ev))() {
             return event_handlers.syscall_entry;
         case syscall_exit:
             return event_handlers.syscall_exit;
+        case exited:
+            return event_handlers.exited;
+        case terminated:
+            return event_handlers.terminated;
+        case continued:
+            return event_handlers.continued;
         default:
             CLEE_ERROR;
     }

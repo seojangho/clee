@@ -21,11 +21,17 @@ typedef uint64_t reg;
 typedef enum {
     syscall_entry,
     syscall_exit,
+    exited,
+    terminated,
+    continued,
 } clee_events;
 
 typedef struct {
     void (*syscall_entry)();
     void (*syscall_exit)();
+    void (*exited)();
+    void (*terminated)();
+    void (*continued)();
 } clee_event_handlers;
 
 /* create child process using fork and execve, and ptrace it
@@ -36,10 +42,12 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]);
 void clee_init();
 void clee_main();
 void clee_signal_handler();
-void clee_syscall(pid_t pid);
+void clee_syscall();
 
 reg clee_syscall_num();
-pid_t clee_syscall_pid();
+pid_t clee_pid();
+int clee_exit_code();
+int clee_terminate_cause();
 const char* clee_syscall_name();
 reg clee_get_arg(int n);
 void clee_set_arg(int n, reg value);
