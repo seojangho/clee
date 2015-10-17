@@ -241,5 +241,25 @@ void (*clee_get_trigger(clee_events ev))() {
     }
 }
 
+ssize_t clee_read(void *src, void *dst, size_t len) {
+    struct iovec remote = {src, len};
+    struct iovec local = {dst, len};
+    ssize_t readed;
+    if ((readed = process_vm_readv(event_pid, &local, 1, &remote, 1, 0)) == -1) {
+        CLEE_ERROR;
+    }
+    return readed;
+}
+
+ssize_t clee_write(void *src, void *dst, size_t len) {
+    struct iovec remote = {dst, len};
+    struct iovec local = {src, len};
+    ssize_t written;
+    if ((written = process_vm_writev(event_pid, &local, 1, &remote, 1, 0)) == -1) {
+        CLEE_ERROR;
+    }
+    return written;
+}
+
 void clee_signal_handler(int sig) {
 }

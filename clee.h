@@ -1,6 +1,8 @@
 #ifndef CLEE_H
 #define CLEE_H
 
+#define _GNU_SOURCE
+#include <sys/uio.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
@@ -56,5 +58,9 @@ reg clee_syscall_result();
 /* triggers */
 void (*clee_set_trigger(clee_events ev, void (*handler)()))();
 void (*clee_get_trigger(clee_events ev))();
+
+/* memory */
+ssize_t clee_read(void *src, void *dst, size_t len);
+ssize_t clee_write(void *src, void *dst, size_t len);
 
 #endif
