@@ -4,12 +4,6 @@ static _Bool tracing;
 
 void clee_init() {
     tracing = false;
-    if (signal(SIGINT, clee_signal_handler) == SIG_ERR) {
-        CLEE_ERROR;
-    }
-    if (signal(SIGTSTP, clee_signal_handler) == SIG_ERR) {
-        CLEE_ERROR;
-    }
 }
 
 pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
@@ -92,6 +86,7 @@ void clee_main() {
     if (pid == -1 && errno != ECHILD) {
         CLEE_ERROR;
     }
+    tracing = false;
 }
 
 void clee_syscall(pid_t pid) {
