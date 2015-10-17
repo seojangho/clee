@@ -38,6 +38,14 @@ pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
                 CLEE_ERROR;
             }
             if (WIFSTOPPED(status)) {
+                long const options =
+                    PTRACE_O_TRACEFORK |
+                    PTRACE_O_TRACEVFORK |
+                    PTRACE_O_TRACECLONE;
+                if (ptrace(PTRACE_SETOPTIONS, pid, 0, options) == -1) {
+                    /* ptrace error */
+                    CLEE_ERROR;
+                }
                 tracing = true;
                 clee_status(pid, status);
                 return pid;
@@ -56,7 +64,7 @@ void clee_signal_chld(int signo) {
     }
     pid_t pid;
     int status;
-    while ((pid = waitpid(-1, &status, WNOHANG|WUNTRACED|WCONTINUED)) > 0) {
+    while ((pid = waitpid(-1, &status, WNOHANG|WUNTRACED|WCONTINUED|__WALL)) > 0) {
         clee_status(pid, status);
     }
     if (pid == -1 && errno != ECHILD) {
