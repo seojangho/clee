@@ -1,9 +1,14 @@
-#include "clee.h"
 #include "interposition.h"
+#include "clee.h"
 
 void onSyscallEntry() {
+    char buf[1000];
     if (clee_syscall_num() == 1) {
         printf("%d entry: %d(%s) - %d\n", clee_pid(), clee_syscall_num(), clee_syscall_name(), clee_get_arg(0));
+        struct iovec remote = {(void*)clee_get_arg(1), 100};
+        struct iovec local = {buf, 100};
+        process_vm_readv(clee_pid(), &local, 1, &remote, 1, 0);
+        printf("BUFFER => %s\n", buf);
         clee_set_arg(0, 1);
     }
 }
