@@ -36,7 +36,7 @@ typedef struct {
 
 /* create child process using fork and execve, and ptrace it
  * users must close unwanted file handers/etc */
-pid_t clee_start(const char *filename, char *const argv[], char *const envp[]);
+pid_t clee(const char *filename, char *const argv[], char *const envp[]);
 
 
 void clee_init();

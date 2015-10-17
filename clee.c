@@ -16,7 +16,7 @@ void clee_init() {
     event_handlers.continued = NULL;
 }
 
-pid_t clee_start(const char *filename, char *const argv[], char *const envp[]) {
+pid_t clee(const char *filename, char *const argv[], char *const envp[]) {
     if (tracing) {
         CLEE_ERROR;
     }

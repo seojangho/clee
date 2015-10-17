@@ -24,6 +24,6 @@ int main(int argc, char **argv) {
     assert(clee_get_trigger(syscall_entry) == onSyscallEntry);
     clee_set_trigger(exited, onExit);
     clee_set_trigger(syscall_exit, onSyscallExit);
-    clee_start(argv[1], argv+1, NULL);
+    clee(argv[1], argv+1, NULL);
     return 0;
 }
