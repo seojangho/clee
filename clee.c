@@ -79,6 +79,7 @@ void clee_main() {
             if (cause == (SIGTRAP|0x80)) {
                 clee_syscall(pid);
             }
+            /* TODO handlers */
             if (cause != SIGTRAP && cause != (SIGTRAP|0x80)) {
                 sig2send = cause;
             }
