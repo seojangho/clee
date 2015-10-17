@@ -25,11 +25,11 @@ void clee_start(const char *filename, char *const argv[], char *const envp[]) {
             if (ptrace(PTRACE_TRACEME, NULL, NULL, NULL) == -1)
             {
                 /* ptrace error */
-                CLEE_ERROR; /* FIXME CLEE_ERROR from child */
+                _exit(1);
             }
             execve(filename, argv, envp);   // causes SIGTRAP
             /* execve error */
-            CLEE_ERROR; /* FIXME CLEE_ERROR from child */
+            _exit(1);
         default:
             /* parent */
             tracee = pid;
