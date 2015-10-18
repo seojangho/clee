@@ -16,7 +16,7 @@ void clee_init() {
     event_handlers.continued = NULL;
 }
 
-pid_t clee(const char *filename, char *const argv[], char *const envp[]) {
+pid_t clee(const char *filename, char *const argv[], char *const envp[], struct sock_filter *filter, unsigned short len) {
     if (tracing) {
         CLEE_ERROR;
     }
@@ -26,6 +26,18 @@ pid_t clee(const char *filename, char *const argv[], char *const envp[]) {
             /* error */
             CLEE_ERROR;
         case 0:
+            if (filter != NULL) {
+                if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1) {
+                    _exit(1);
+                }
+                struct sock_fprog prog = {
+                    .len = len,
+                    .filter = filter,
+                };
+                if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) == -1) {
+                    _exit(1);
+                }
+            }
             if (ptrace(PTRACE_TRACEME, NULL, NULL, NULL) == -1)
             {
                 /* ptrace error */

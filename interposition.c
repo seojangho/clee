@@ -34,7 +34,8 @@ void onExit() {
 
 int main(int argc, char **argv, char **envp) {
     int param_opt;
-    while ((param_opt = getopt(argc, argv, "abcqh")) != -1) {
+    _Bool seccomp_enabled = false;
+    while ((param_opt = getopt(argc, argv, "abcoqh")) != -1) {
         switch (param_opt) {
             case 'a':
                 option_write_stdout = true;
@@ -48,6 +49,9 @@ int main(int argc, char **argv, char **envp) {
             case 'q':
                 option_print_syscall = false;
                 break;
+            case 'o':
+                seccomp_enabled = true;
+                break;
             case 'h':
                 showhelp(argv[0]);
                 exit(0);
@@ -56,6 +60,12 @@ int main(int argc, char **argv, char **envp) {
                 exit(1);
         }
     }
+    struct sock_filter filter[] = {
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, (offsetof(struct seccomp_data, nr))),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_open, 1, 0),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
+    };
 
     if (optind == argc) {
         showhelp(argv[0]);
@@ -66,7 +76,7 @@ int main(int argc, char **argv, char **envp) {
     clee_set_trigger(exited, onExit);
     clee_set_trigger(syscall_entry, onSyscallEntry);
     clee_set_trigger(syscall_exit, onSyscallExit);
-    clee(argv[optind], argv + optind, envp);
+    clee(argv[optind], argv + optind, envp, seccomp_enabled ? filter : NULL, 4);
 
     return 0;
 }

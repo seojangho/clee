@@ -2,6 +2,11 @@
 #define CLEE_H
 
 #define _GNU_SOURCE
+#include <linux/seccomp.h>
+#include <linux/filter.h>
+#include <linux/audit.h>
+#include <signal.h>
+#include <sys/ptrace.h>
 #include <sys/uio.h>
 #include <stdbool.h>
 #include <errno.h>
@@ -9,10 +14,11 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/ptrace.h>
 #include <sys/user.h>
-#include <signal.h>
 #include <stdint.h>
+#include <sys/prctl.h>
+#include <stddef.h>
+#include <asm/unistd.h>
 
 #include "syscalls.h"
 
@@ -38,7 +44,7 @@ typedef struct {
 
 /* create child process using fork and execve, and ptrace it
  * users must close unwanted file handers/etc */
-pid_t clee(const char *filename, char *const argv[], char *const envp[]);
+pid_t clee(const char *filename, char *const argv[], char *const envp[], struct sock_filter *filter, unsigned short len);
 
 
 void clee_init();
