@@ -392,6 +392,10 @@ int clee_signal() {
 }
 
 void clee_signal_handler(int sig) {
+    clee_kill();
+}
+
+void clee_kill() {
     while (list_size(&children) > 0) {
         clee_tracee *tracee = list_get_at(&children, 0);
         kill(tracee->pid, 9);
