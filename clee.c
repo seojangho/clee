@@ -99,7 +99,9 @@ void clee_main() {
             if (cause != SIGTRAP && cause != (SIGTRAP|0x80)) {
                 stopped_behavior = next_syscall;
                 stopped_signal = cause;
-                (event_handlers.stopped)();
+                if (event_handlers.stopped != NULL) {
+                    (event_handlers.stopped)();
+                }
             }
 
             switch (stopped_behavior) {
