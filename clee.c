@@ -346,16 +346,18 @@ void clee_children_add(pid_t pid) {
 }
 
 clee_tracee *clee_children_lookup(pid_t pid) {
-    clee_tracee *tracee = NULL;
+    clee_tracee *tracee;
+    _Bool found = false;
     int i;
     int len = list_size(&children);
     for (i = 0; i < len; i++) {
         tracee = list_get_at(&children, i);
         if (tracee->pid == pid) {
+            found = true;
             break;
         }
     }
-    return tracee;
+    return (found ? tracee : NULL);
 }
 
 void clee_children_delete(pid_t pid) {
