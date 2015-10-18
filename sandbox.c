@@ -101,5 +101,13 @@ Options: \n\
 }
 
 void showpolicy() {
-
+    printf("List of forbidden system calls:\n");
+    int i;
+    for (i = 0;; i++)
+    {
+        if (forbidden[i] == -1) {
+            break;
+        }
+        printf("%s(%d)\n", clee_syscall_num2name(forbidden[i]), forbidden[i]);
+    }
 }

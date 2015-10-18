@@ -481,3 +481,7 @@ void clee_syscall_regs_set() {
         CLEE_ERROR;
     }
 }
+
+const char* clee_syscall_num2name(int num) {
+    return clee_syscall_namelookup(num);
+}

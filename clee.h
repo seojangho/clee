@@ -87,6 +87,7 @@ pid_t clee_pid();
 int clee_exit_code();
 int clee_terminate_cause();
 const char* clee_syscall_name();
+const char* clee_syscall_num2name(int num);
 reg clee_get_arg(int n);
 void clee_set_arg(int n, reg value);
 reg clee_syscall_result();
