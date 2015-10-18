@@ -157,10 +157,14 @@ void clee_main() {
                 }
             }
 
-            request = clee_behavior2request(stopped_behavior);
+            if (stopped_behavior == terminate) {
+                kill(pid, SIGKILL);
+            } else {
+                request = clee_behavior2request(stopped_behavior);
 
-            if (ptrace(request, pid, NULL, stopped_signal) == -1) {
-                CLEE_ERROR;
+                if (ptrace(request, pid, NULL, stopped_signal) == -1) {
+                    CLEE_ERROR;
+                }
             }
         } else if (WIFEXITED(status)) {
             clee_children_delete(pid);
@@ -451,9 +455,6 @@ _Bool clee_process_exists(pid_t pid) {
 
 enum __ptrace_request clee_behavior2request(clee_behavior behavior) {
     switch (behavior) {
-        case terminate:
-            return PTRACE_KILL;
-            break;
         case interrupt:
             return PTRACE_INTERRUPT;
         case detach:

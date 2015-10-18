@@ -15,7 +15,12 @@ void onExit() {
 }
 void onSeccomp() {
     printf("[Detected] %s(%d)\n", clee_syscall_name(), clee_syscall_num());
-    getchar();
+    if (option_enforcing) {
+        printf("No mercy!...\n");
+        clee_behave(terminate, 0);
+    } else {
+        getchar();
+    }
 }
 
 int main(int argc, char **argv, char **envp) {
@@ -66,7 +71,7 @@ int main(int argc, char **argv, char **envp) {
     i++;
     filter[i].code = (unsigned short)(BPF_RET | BPF_K);
     filter[i].jt = filter[i].jf = 0;
-    filter[i].k = option_enforcing ? SECCOMP_RET_KILL : SECCOMP_RET_TRACE;
+    filter[i].k = SECCOMP_RET_TRACE;
 
     if (optind == argc) {
         showhelp(argv[0]);
