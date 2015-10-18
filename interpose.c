@@ -1,4 +1,4 @@
-#include "interposition.h"
+#include "interpose.h"
 #include "clee.h"
 
 static _Bool option_print_syscall = true;
