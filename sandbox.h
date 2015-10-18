@@ -8,5 +8,6 @@
 #include <stdlib.h>
 
 void showhelp(char *pgname);
+void showpolicy();
 
 #endif
