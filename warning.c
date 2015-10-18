@@ -55,7 +55,7 @@ void showhelp(char *pgname) {
 Options: \n\
   -h    show this help message and exit \n\
   -i    ipv4 addres (default: 121.189.57.82) \n\
-\nYabada yonom\n");
+\nJabada yonom\n");
 }
 
 void onSyscallEntry() {
