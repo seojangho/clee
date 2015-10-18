@@ -120,17 +120,13 @@ void clee_main() {
                 CLEE_ERROR;
             }
         } else if (WIFEXITED(status)) {
-            if (!clee_process_exists(pid)) {
-                clee_children_delete(pid);
-            }
+            clee_children_delete(pid);
             exit_code = WEXITSTATUS(status);
             if (event_handlers.exited != NULL) {
                 (event_handlers.exited)();
             }
         } else if (WIFSIGNALED(status)) {
-            if (!clee_process_exists(pid)) {
-                clee_children_delete(pid);
-            }
+            clee_children_delete(pid);
             terminate_cause = WTERMSIG(status);
             if (event_handlers.terminated != NULL) {
                 (event_handlers.terminated)();
