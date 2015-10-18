@@ -7,6 +7,7 @@ static clee_event_handlers event_handlers;
 static int exit_code;
 static int terminate_cause;
 static clee_behavior stopped_behavior;
+static clee_behavior default_behavior;
 static int stopped_signal;
 static int stopped_cause;
 static list_t children;
@@ -82,6 +83,7 @@ pid_t clee(const char *filename, char *const argv[], char *const envp[], clee_be
                     CLEE_ERROR;
                 }
                 tracing = true;
+                default_behavior = initial_behavior;
                 ptrace(clee_behavior2request(initial_behavior), pid, NULL, 0);
                 clee_main();
                 return pid;
@@ -105,7 +107,7 @@ void clee_main() {
         if (WIFSTOPPED(status)) {
             enum __ptrace_request request;
             stopped_cause = WSTOPSIG(status);
-            stopped_behavior = next_syscall;
+            stopped_behavior = default_behavior;
             if (stopped_cause == (SIGTRAP|0x80)) {
                 stopped_signal = 0;
                 clee_syscall(pid);
