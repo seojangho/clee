@@ -9,15 +9,21 @@ static int terminate_cause;
 static clee_behavior stopped_behavior;
 static int stopped_signal;
 static int stopped_cause;
+static list_t children;
 
 void clee_init() {
     tracing = false;
+    list_init(&children);
     event_handlers.syscall_entry = NULL;
     event_handlers.syscall_exit = NULL;
     event_handlers.exited = NULL;
     event_handlers.terminated = NULL;
     event_handlers.continued = NULL;
     event_handlers.stopped = NULL;
+    event_handlers.new_process = NULL;
+    if (signal(SIGTERM, clee_signal_handler) == SIG_ERR) {
+        CLEE_ERROR;
+    }
 }
 
 pid_t clee(const char *filename, char *const argv[], char *const envp[], struct sock_filter *filter, unsigned short len) {
@@ -58,6 +64,7 @@ pid_t clee(const char *filename, char *const argv[], char *const envp[], struct 
                 /* waitpid error */
                 CLEE_ERROR;
             }
+            clee_children_add(pid);
             if (WIFSTOPPED(status)) {
                 long const options =
                     PTRACE_O_TRACESYSGOOD |
@@ -96,8 +103,12 @@ void clee_main() {
             stopped_signal = 0;
             if (stopped_cause == (SIGTRAP|0x80)) {
                 clee_syscall(pid);
-            }
-            if (stopped_cause != (SIGTRAP|0x80)) {
+            } else if (stopped_cause == SIGSTOP && clee_children_lookup(pid) == NULL) {
+                clee_children_add(pid);
+                if (event_handlers.new_process != NULL) {
+                    (event_handlers.new_process)();
+                }
+            } else {
                 if (event_handlers.stopped != NULL) {
                     (event_handlers.stopped)();
                 }
@@ -129,11 +140,17 @@ void clee_main() {
                 CLEE_ERROR;
             }
         } else if (WIFEXITED(status)) {
+            if (!clee_process_exists(pid)) {
+                clee_children_delete(pid);
+            }
             exit_code = WEXITSTATUS(status);
             if (event_handlers.exited != NULL) {
                 (event_handlers.exited)();
             }
         } else if (WIFSIGNALED(status)) {
+            if (!clee_process_exists(pid)) {
+                clee_children_delete(pid);
+            }
             terminate_cause = WTERMSIG(status);
             if (event_handlers.terminated != NULL) {
                 (event_handlers.terminated)();
@@ -150,6 +167,9 @@ void clee_main() {
         CLEE_ERROR;
     }
     tracing = false;
+    if (list_size(&children) != 0) {
+        CLEE_ERROR;
+    }
 }
 
 void clee_syscall() {
@@ -269,6 +289,10 @@ void (*clee_set_trigger(clee_events ev, void (*handler)()))() {
             old_handler = event_handlers.stopped;
             event_handlers.stopped = handler;
             return old_handler;
+        case new_process:
+            old_handler = event_handlers.new_process;
+            event_handlers.new_process = handler;
+            return old_handler;
         default:
             CLEE_ERROR;
     }
@@ -288,6 +312,8 @@ void (*clee_get_trigger(clee_events ev))() {
             return event_handlers.continued;
         case stopped:
             return event_handlers.stopped;
+        case new_process:
+            return event_handlers.new_process;
         default:
             CLEE_ERROR;
     }
@@ -323,5 +349,51 @@ int clee_signal() {
 }
 
 void clee_signal_handler(int sig) {
-    /* TODO kill all child process */
+    while (list_size(&children) > 0) {
+        clee_tracee *tracee = list_get_at(&children, 0);
+        kill(tracee->pid, 9);
+        list_delete_at(&children, 0);
+    }
+}
+
+void clee_children_add(pid_t pid) {
+    clee_tracee *new_tracee = malloc(sizeof(clee_tracee));
+    if (new_tracee == NULL) {
+        CLEE_ERROR;
+    }
+    new_tracee->pid = pid;
+    list_append(&children, new_tracee);
+}
+
+clee_tracee *clee_children_lookup(pid_t pid) {
+    clee_tracee *tracee = NULL;
+    int i;
+    int len = list_size(&children);
+    for (i = 0; i < len; i++) {
+        tracee = list_get_at(&children, i);
+        if (tracee->pid == pid) {
+            break;
+        }
+    }
+    return tracee;
+}
+
+void clee_children_delete(pid_t pid) {
+    clee_tracee *tracee = clee_children_lookup(pid);
+    if (tracee == NULL) {
+        CLEE_ERROR;
+    }
+    free(tracee);
+    list_delete(&children, tracee);
+}
+
+_Bool clee_process_exists(pid_t pid) {
+    int result = kill(pid, 0);
+    if (result == 0) {
+        return true;
+    } else if (errno == ESRCH) {
+        return false;
+    } else {
+        CLEE_ERROR;
+    }
 }

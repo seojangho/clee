@@ -2,6 +2,7 @@
 #define CLEE_H
 
 #define _GNU_SOURCE
+#include <stdlib.h>
 #include <linux/seccomp.h>
 #include <linux/filter.h>
 #include <linux/audit.h>
@@ -21,6 +22,7 @@
 #include <asm/unistd.h>
 
 #include "syscalls.h"
+#include "simclist.h"
 
 #define CLEE_ERROR    {assert(0);}
 
@@ -33,6 +35,7 @@ typedef enum {
     terminated,
     continued,
     stopped,
+    new_process,
 } clee_events;
 
 typedef enum {
@@ -51,7 +54,12 @@ typedef struct {
     void (*terminated)();
     void (*continued)();
     void (*stopped)();
+    void (*new_process)();
 } clee_event_handlers;
+
+typedef struct {
+    pid_t pid;
+} clee_tracee;
 
 /* create child process using fork and execve, and ptrace it
  * users must close unwanted file handers/etc */
@@ -83,5 +91,11 @@ void (*clee_get_trigger(clee_events ev))();
 /* memory */
 ssize_t clee_read(void *src, void *dst, size_t len);
 ssize_t clee_write(void *src, void *dst, size_t len);
+
+void clee_children_add(pid_t pid);
+void clee_children_delete(pid_t pid);
+clee_tracee *clee_children_lookup(pid_t pid);
+
+_Bool clee_process_exists(pid_t pid);
 
 #endif

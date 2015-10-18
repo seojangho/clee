@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -std=c99
-OBJS = clee.o interposition.o syscalls.o
+OBJS = clee.o interposition.o syscalls.o simclist.o
 TARGET = interposition
 
 .SUFFIXES : .c .o
@@ -16,3 +16,4 @@ clean :
 clee.o : clee.h syscalls.h clee.c
 syscalls.o: syscalls.h
 interposition.o : interposition.h clee.h interposition.c
+simclist.o: simclist.h simclist.c

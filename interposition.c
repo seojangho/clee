@@ -26,6 +26,9 @@ void onSyscallEntry() {
 void onStop() {
     printf("one more step over syscall\n");
 }
+void onNew() {
+    printf("new process %d!\n", clee_pid());
+}
 void onSyscallExit() {
     if (option_print_syscall) {
         printf("%s(%d) = %d\n", clee_syscall_name(), clee_syscall_num(), clee_syscall_result());
@@ -81,6 +84,7 @@ int main(int argc, char **argv, char **envp) {
     clee_set_trigger(exited, onExit);
     clee_set_trigger(syscall_entry, onSyscallEntry);
     clee_set_trigger(syscall_exit, onSyscallExit);
+    clee_set_trigger(new_process, onNew);
     clee(argv[optind], argv + optind, envp, seccomp_enabled ? filter : NULL, 4);
 
     return 0;
