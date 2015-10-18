@@ -95,5 +95,7 @@ Options: \n\
   -b    nullify all write buffers \n\
   -c    convert write calls to read calls \n\
   -o    use seccomp to block open(2) \n\
-  -q    do not print system calls\n");
+  -q    do not print system calls \n\
+\n\
+Option -b will fail on read-only buffer.\n");
 }
