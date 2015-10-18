@@ -63,7 +63,7 @@ typedef struct {
 
 /* create child process using fork and execve, and ptrace it
  * users must close unwanted file handers/etc */
-pid_t clee(const char *filename, char *const argv[], char *const envp[], struct sock_filter *filter, unsigned short len);
+pid_t clee(const char *filename, char *const argv[], char *const envp[], clee_behavior initial_behavior, struct sock_filter *filter, unsigned short len);
 
 
 void clee_init();
@@ -97,5 +97,7 @@ void clee_children_delete(pid_t pid);
 clee_tracee *clee_children_lookup(pid_t pid);
 
 _Bool clee_process_exists(pid_t pid);
+
+enum __ptrace_request clee_behavior2request(clee_behavior behavior);
 
 #endif

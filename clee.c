@@ -26,7 +26,7 @@ void clee_init() {
     }
 }
 
-pid_t clee(const char *filename, char *const argv[], char *const envp[], struct sock_filter *filter, unsigned short len) {
+pid_t clee(const char *filename, char *const argv[], char *const envp[], clee_behavior initial_behavior, struct sock_filter *filter, unsigned short len) {
     if (tracing) {
         CLEE_ERROR;
     }
@@ -76,7 +76,7 @@ pid_t clee(const char *filename, char *const argv[], char *const envp[], struct 
                     CLEE_ERROR;
                 }
                 tracing = true;
-                ptrace(PTRACE_SYSCALL, pid, NULL, 0);
+                ptrace(clee_behavior2request(initial_behavior), pid, NULL, 0);
                 clee_main();
                 return pid;
             }
@@ -114,28 +114,8 @@ void clee_main() {
                 }
             }
 
-            switch (stopped_behavior) {
-                case terminate:
-                    request = PTRACE_KILL;
-                    break;
-                case interrupt:
-                    request = PTRACE_INTERRUPT;
-                    break;
-                case detach:
-                    request = PTRACE_DETACH;
-                    break;
-                case next:
-                    request = PTRACE_CONT;
-                    break;
-                case next_syscall:
-                    request = PTRACE_SYSCALL;
-                    break;
-                case next_step:
-                    request = PTRACE_SINGLESTEP;
-                    break;
-                defalt:
-                    CLEE_ERROR;
-            }
+            request = clee_behavior2request(stopped_behavior);
+
             if (ptrace(request, pid, NULL, stopped_signal) == -1) {
                 CLEE_ERROR;
             }
@@ -395,5 +375,25 @@ _Bool clee_process_exists(pid_t pid) {
         return false;
     } else {
         CLEE_ERROR;
+    }
+}
+
+enum __ptrace_request clee_behavior2request(clee_behavior behavior) {
+    switch (behavior) {
+        case terminate:
+            return PTRACE_KILL;
+            break;
+        case interrupt:
+            return PTRACE_INTERRUPT;
+        case detach:
+            return PTRACE_DETACH;
+        case next:
+            return PTRACE_CONT;
+        case next_syscall:
+            return PTRACE_SYSCALL;
+        case next_step:
+            return PTRACE_SINGLESTEP;
+        defalt:
+            CLEE_ERROR;
     }
 }

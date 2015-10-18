@@ -85,7 +85,7 @@ int main(int argc, char **argv, char **envp) {
     clee_set_trigger(syscall_entry, onSyscallEntry);
     clee_set_trigger(syscall_exit, onSyscallExit);
     clee_set_trigger(new_process, onNew);
-    clee(argv[optind], argv + optind, envp, seccomp_enabled ? filter : NULL, 4);
+    clee(argv[optind], argv + optind, envp, next_syscall, seccomp_enabled ? filter : NULL, 4);
 
     return 0;
 }
