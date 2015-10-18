@@ -482,6 +482,11 @@ void clee_syscall_regs_set() {
     }
 }
 
+
+struct user_regs_struct *clee_regs() {
+    return &syscall_regs;
+}
+
 const char* clee_syscall_num2name(int num) {
     return clee_syscall_namelookup(num);
 }

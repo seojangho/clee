@@ -115,4 +115,6 @@ enum __ptrace_request clee_behavior2request(clee_behavior behavior);
 void clee_syscall_regs_set();
 void clee_syscall_regs_get();
 
+struct user_regs_struct *clee_regs();
+
 #endif
