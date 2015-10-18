@@ -6,6 +6,8 @@ static pid_t event_pid;
 static clee_event_handlers event_handlers;
 static int exit_code;
 static int terminate_cause;
+static clee_behavior stopped_behavior;
+static int stopped_signal;
 
 void clee_init() {
     tracing = false;
@@ -14,6 +16,7 @@ void clee_init() {
     event_handlers.exited = NULL;
     event_handlers.terminated = NULL;
     event_handlers.continued = NULL;
+    event_handlers.stopped = NULL;
 }
 
 pid_t clee(const char *filename, char *const argv[], char *const envp[], struct sock_filter *filter, unsigned short len) {
@@ -86,16 +89,42 @@ void clee_main() {
     while ((pid = waitpid(-1, &status, __WALL)) > 0) {
         event_pid = pid;
         if (WIFSTOPPED(status)) {
+            enum __ptrace_request request;
             int const cause = WSTOPSIG(status);
-            int sig2send = 0;
             if (cause == (SIGTRAP|0x80)) {
+                stopped_behavior = next_syscall;
+                stopped_signal = 0;
                 clee_syscall(pid);
             }
-            /* TODO handlers */
             if (cause != SIGTRAP && cause != (SIGTRAP|0x80)) {
-                sig2send = cause;
+                stopped_behavior = next_syscall;
+                stopped_signal = cause;
+                (event_handlers.stopped)();
             }
-            if (ptrace(PTRACE_SYSCALL, pid, NULL, sig2send) == -1) {
+
+            switch (stopped_behavior) {
+                case terminate:
+                    request = PTRACE_KILL;
+                    break;
+                case interrupt:
+                    request = PTRACE_INTERRUPT;
+                    break;
+                case detach:
+                    request = PTRACE_DETACH;
+                    break;
+                case next:
+                    request = PTRACE_CONT;
+                    break;
+                case next_syscall:
+                    request = PTRACE_SYSCALL;
+                    break;
+                case next_step:
+                    request = PTRACE_SINGLESTEP;
+                    break;
+                defalt:
+                    CLEE_ERROR;
+            }
+            if (ptrace(request, pid, NULL, stopped_signal) == -1) {
                 CLEE_ERROR;
             }
         } else if (WIFEXITED(status)) {
@@ -235,6 +264,10 @@ void (*clee_set_trigger(clee_events ev, void (*handler)()))() {
             old_handler = event_handlers.continued;
             event_handlers.continued = handler;
             return old_handler;
+        case stopped:
+            old_handler = event_handlers.stopped;
+            event_handlers.stopped = handler;
+            return old_handler;
         default:
             CLEE_ERROR;
     }
@@ -252,6 +285,8 @@ void (*clee_get_trigger(clee_events ev))() {
             return event_handlers.terminated;
         case continued:
             return event_handlers.continued;
+        case stopped:
+            return event_handlers.stopped;
         default:
             CLEE_ERROR;
     }
@@ -277,5 +312,11 @@ ssize_t clee_write(void *src, void *dst, size_t len) {
     return written;
 }
 
+void clee_behave(clee_behavior behavior, int sig) {
+    stopped_behavior = behavior;
+    stopped_signal = sig;
+}
+
 void clee_signal_handler(int sig) {
+    /* TODO kill all child process */
 }

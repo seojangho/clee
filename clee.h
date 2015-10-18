@@ -32,7 +32,17 @@ typedef enum {
     exited,
     terminated,
     continued,
+    stopped,
 } clee_events;
+
+typedef enum {
+    terminate,
+    interrupt,
+    detach,
+    next,
+    next_syscall,
+    next_step,
+} clee_behavior;
 
 typedef struct {
     void (*syscall_entry)();
@@ -40,6 +50,7 @@ typedef struct {
     void (*exited)();
     void (*terminated)();
     void (*continued)();
+    void (*stopped)();
 } clee_event_handlers;
 
 /* create child process using fork and execve, and ptrace it
@@ -61,6 +72,8 @@ const char* clee_syscall_name();
 reg clee_get_arg(int n);
 void clee_set_arg(int n, reg value);
 reg clee_syscall_result();
+
+void clee_behave(clee_behavior behavior, int sig);
 
 /* triggers */
 void (*clee_set_trigger(clee_events ev, void (*handler)()))();
