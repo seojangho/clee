@@ -72,6 +72,7 @@ const char* clee_syscall_name();
 reg clee_get_arg(int n);
 void clee_set_arg(int n, reg value);
 reg clee_syscall_result();
+int clee_signal();
 
 void clee_behave(clee_behavior behavior, int sig);
 

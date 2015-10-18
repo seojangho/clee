@@ -8,6 +8,7 @@ static int exit_code;
 static int terminate_cause;
 static clee_behavior stopped_behavior;
 static int stopped_signal;
+static int stopped_cause;
 
 void clee_init() {
     tracing = false;
@@ -90,15 +91,13 @@ void clee_main() {
         event_pid = pid;
         if (WIFSTOPPED(status)) {
             enum __ptrace_request request;
-            int const cause = WSTOPSIG(status);
-            if (cause == (SIGTRAP|0x80)) {
-                stopped_behavior = next_syscall;
-                stopped_signal = 0;
+            stopped_cause = WSTOPSIG(status);
+            stopped_behavior = next_syscall;
+            stopped_signal = 0;
+            if (stopped_cause == (SIGTRAP|0x80)) {
                 clee_syscall(pid);
             }
-            if (cause != SIGTRAP && cause != (SIGTRAP|0x80)) {
-                stopped_behavior = next_syscall;
-                stopped_signal = cause;
+            if (stopped_cause != (SIGTRAP|0x80)) {
                 if (event_handlers.stopped != NULL) {
                     (event_handlers.stopped)();
                 }
@@ -317,6 +316,10 @@ ssize_t clee_write(void *src, void *dst, size_t len) {
 void clee_behave(clee_behavior behavior, int sig) {
     stopped_behavior = behavior;
     stopped_signal = sig;
+}
+
+int clee_signal() {
+    return stopped_cause;
 }
 
 void clee_signal_handler(int sig) {
