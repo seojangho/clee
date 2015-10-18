@@ -13,7 +13,7 @@ void onSyscallEntry() {
     if (clee_syscall_num() == 1 && option_write_stdout) {
         clee_set_arg(0, 1);
     }
-    if (clee_syscall_num() == 1 && clee_get_arg(0) == 1) {
+    if (clee_syscall_num() == 1 && clee_get_arg(0) == 1 && option_nullify_stdout) {
         char null = '\0';
         int len = clee_get_arg(2);
         void *pos = (void*)clee_get_arg(1);
