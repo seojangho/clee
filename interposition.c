@@ -23,17 +23,13 @@ void onSyscallEntry() {
         }
     }
 }
-void onStop() {
-    printf("one more step over syscall\n");
-}
 void onNew() {
-    printf("new process %d!\n", clee_pid());
+    printf("** new process %d created\n", clee_pid());
 }
 void onSyscallExit() {
     if (option_print_syscall) {
         printf("%s(%d) = %d\n", clee_syscall_name(), clee_syscall_num(), clee_syscall_result());
     }
-    clee_behave(next_step, 0);
 }
 void onExit() {
     printf("** process %d exited with code %d **\n", clee_pid(), clee_exit_code());
@@ -80,7 +76,6 @@ int main(int argc, char **argv, char **envp) {
     }
 
     clee_init();
-    clee_set_trigger(stopped, onStop);
     clee_set_trigger(exited, onExit);
     clee_set_trigger(syscall_entry, onSyscallEntry);
     clee_set_trigger(syscall_exit, onSyscallExit);
