@@ -1,9 +1,12 @@
 #ifndef INTERPOSITION_H
 #define INTERPOSITION_H
 
-#define _GNU_SOURCE
 #include <stdio.h>
-#include <sys/uio.h>
-#include <features.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <stdbool.h>
+#include <stdlib.h>
+
+void showhelp(char *pgname);
 
 #endif
