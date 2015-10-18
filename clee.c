@@ -100,15 +100,17 @@ void clee_main() {
             enum __ptrace_request request;
             stopped_cause = WSTOPSIG(status);
             stopped_behavior = next_syscall;
-            stopped_signal = 0;
             if (stopped_cause == (SIGTRAP|0x80)) {
+                stopped_signal = 0;
                 clee_syscall(pid);
             } else if (stopped_cause == SIGSTOP && clee_children_lookup(pid) == NULL) {
+                stopped_signal = stopped_cause;
                 clee_children_add(pid);
                 if (event_handlers.new_process != NULL) {
                     (event_handlers.new_process)();
                 }
             } else {
+                stopped_signal = stopped_cause;
                 if (event_handlers.stopped != NULL) {
                     (event_handlers.stopped)();
                 }
