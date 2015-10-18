@@ -36,6 +36,11 @@ typedef enum {
     continued,
     stopped,
     new_process,
+    syscall_clone,
+    syscall_fork,
+    syscall_vfork,
+    syscall_seccomp,
+    successful_exec,
 } clee_events;
 
 typedef enum {
@@ -55,6 +60,11 @@ typedef struct {
     void (*continued)();
     void (*stopped)();
     void (*new_process)();
+    void (*syscall_clone)();
+    void (*syscall_fork)();
+    void (*syscall_vfork)();
+    void (*syscall_seccomp)();
+    void (*successful_exec)();
 } clee_event_handlers;
 
 typedef struct {
@@ -99,5 +109,8 @@ clee_tracee *clee_children_lookup(pid_t pid);
 _Bool clee_process_exists(pid_t pid);
 
 enum __ptrace_request clee_behavior2request(clee_behavior behavior);
+
+void clee_syscall_regs_set();
+void clee_syscall_regs_get();
 
 #endif

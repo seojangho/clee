@@ -21,6 +21,11 @@ void clee_init() {
     event_handlers.continued = NULL;
     event_handlers.stopped = NULL;
     event_handlers.new_process = NULL;
+    event_handlers.syscall_clone = NULL;
+    event_handlers.syscall_fork = NULL;
+    event_handlers.syscall_vfork = NULL;
+    event_handlers.syscall_seccomp = NULL;
+    event_handlers.successful_exec = NULL;
     if (signal(SIGTERM, clee_signal_handler) == SIG_ERR) {
         CLEE_ERROR;
     }
@@ -67,6 +72,7 @@ pid_t clee(const char *filename, char *const argv[], char *const envp[], clee_be
             clee_children_add(pid);
             if (WIFSTOPPED(status)) {
                 long const options =
+                    PTRACE_O_TRACESECCOMP |
                     PTRACE_O_TRACESYSGOOD |
                     PTRACE_O_TRACEFORK |
                     PTRACE_O_TRACEVFORK |
@@ -103,6 +109,39 @@ void clee_main() {
             if (stopped_cause == (SIGTRAP|0x80)) {
                 stopped_signal = 0;
                 clee_syscall(pid);
+            } else if (stopped_cause == SIGTRAP) {
+                stopped_signal = stopped_cause;
+                const int st = status >> 8;
+                if (st == (SIGTRAP | (PTRACE_EVENT_CLONE << 8))) {
+                    clee_syscall_regs_get();
+                    if (event_handlers.syscall_clone != NULL) {
+                        (event_handlers.syscall_clone)();
+                    }
+                    clee_syscall_regs_set();
+                } else if (st == (SIGTRAP | (PTRACE_EVENT_FORK << 8))) {
+                    clee_syscall_regs_get();
+                    if (event_handlers.syscall_fork != NULL) {
+                        (event_handlers.syscall_fork)();
+                    }
+                    clee_syscall_regs_set();
+                } else if (st == (SIGTRAP | (PTRACE_EVENT_VFORK << 8))) {
+                    clee_syscall_regs_get();
+                    if (event_handlers.syscall_vfork != NULL) {
+                        (event_handlers.syscall_vfork)();
+                    }
+                    clee_syscall_regs_set();
+                } else if (st == (SIGTRAP | (PTRACE_EVENT_SECCOMP << 8))) {
+                    clee_syscall_regs_get();
+                    if (event_handlers.syscall_seccomp != NULL) {
+                        (event_handlers.syscall_seccomp)();
+                    }
+                    clee_syscall_regs_set();
+                } else {
+                    /* successful exec */
+                    if (event_handlers.successful_exec != NULL) {
+                        (event_handlers.successful_exec)();
+                    }
+                }
             } else if (stopped_cause == SIGSTOP && clee_children_lookup(pid) == NULL) {
                 stopped_signal = stopped_cause;
                 clee_children_add(pid);
@@ -151,16 +190,12 @@ void clee_main() {
 }
 
 void clee_syscall() {
-    if (ptrace(PTRACE_GETREGS, event_pid, 0, &syscall_regs) == -1) {
-        CLEE_ERROR;
-    }
+    clee_syscall_regs_get();
     if (syscall_regs.rax == -ENOSYS) {
         if (event_handlers.syscall_entry != NULL) {
             (event_handlers.syscall_entry)();
         }
-        if (ptrace(PTRACE_SETREGS, event_pid, 0, &syscall_regs) == -1) {
-            CLEE_ERROR;
-        }
+        clee_syscall_regs_set();
     } else {
         if (event_handlers.syscall_exit != NULL) {
             (event_handlers.syscall_exit)();
@@ -271,6 +306,26 @@ void (*clee_set_trigger(clee_events ev, void (*handler)()))() {
             old_handler = event_handlers.new_process;
             event_handlers.new_process = handler;
             return old_handler;
+        case syscall_clone:
+            old_handler = event_handlers.syscall_clone;
+            event_handlers.syscall_clone = handler;
+            return old_handler;
+        case syscall_fork:
+            old_handler = event_handlers.syscall_fork;
+            event_handlers.syscall_fork = handler;
+            return old_handler;
+        case syscall_vfork:
+            old_handler = event_handlers.syscall_vfork;
+            event_handlers.syscall_vfork = handler;
+            return old_handler;
+        case syscall_seccomp:
+            old_handler = event_handlers.syscall_seccomp;
+            event_handlers.syscall_seccomp = handler;
+            return old_handler;
+        case successful_exec:
+            old_handler = event_handlers.successful_exec;
+            event_handlers.successful_exec = handler;
+            return old_handler;
         default:
             CLEE_ERROR;
     }
@@ -292,6 +347,16 @@ void (*clee_get_trigger(clee_events ev))() {
             return event_handlers.stopped;
         case new_process:
             return event_handlers.new_process;
+        case syscall_clone:
+            return event_handlers.syscall_clone;
+        case syscall_fork:
+            return event_handlers.syscall_fork;
+        case syscall_vfork:
+            return event_handlers.syscall_vfork;
+        case syscall_seccomp:
+            return event_handlers.syscall_seccomp;
+        case successful_exec:
+            return event_handlers.successful_exec;
         default:
             CLEE_ERROR;
     }
@@ -395,5 +460,17 @@ enum __ptrace_request clee_behavior2request(clee_behavior behavior) {
             return PTRACE_SINGLESTEP;
         defalt:
             CLEE_ERROR;
+    }
+}
+
+void clee_syscall_regs_get() {
+    if (ptrace(PTRACE_GETREGS, event_pid, 0, &syscall_regs) == -1) {
+        CLEE_ERROR;
+    }
+}
+
+void clee_syscall_regs_set() {
+    if (ptrace(PTRACE_SETREGS, event_pid, 0, &syscall_regs) == -1) {
+        CLEE_ERROR;
     }
 }
