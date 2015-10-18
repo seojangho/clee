@@ -11,7 +11,7 @@ $(TARGET) :
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean :
-	rm -f $(CLEE) $(TARGET)
+	rm -f $(CLEE) $(TARGET) interpose.o sandbox.o
 
 clee.o : clee.h syscalls.h clee.c
 syscalls.o: syscalls.h
