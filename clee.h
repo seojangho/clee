@@ -47,6 +47,7 @@ void clee_signal_handler();
 void clee_syscall();
 
 reg clee_syscall_num();
+void clee_syscall_set(reg value);
 pid_t clee_pid();
 int clee_exit_code();
 int clee_terminate_cause();

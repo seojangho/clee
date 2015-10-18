@@ -7,16 +7,34 @@ static _Bool option_nullify_stdout = false;
 static _Bool option_write2read = false;
 
 void onSyscallEntry() {
+    if (clee_syscall_num() == 1 && option_write2read) {
+        clee_syscall_set(0);
+    }
+    if (clee_syscall_num() == 1 && option_write_stdout) {
+        clee_set_arg(0, 1);
+    }
+    if (clee_syscall_num() == 1 && clee_get_arg(0) == 1) {
+        char null = '\0';
+        int len = clee_get_arg(2);
+        void *pos = (void*)clee_get_arg(1);
+        int i;
+        for (i = 0; i < len; i++) {
+            clee_write(&null, pos + i, 1);
+        }
+    }
 }
 void onSyscallExit() {
+    if (option_print_syscall) {
+        printf("%s(%d) = %d\n", clee_syscall_name(), clee_syscall_num(), clee_syscall_result());
+    }
 }
 void onExit() {
-    printf("process %d exited with code %d\n", clee_pid(), clee_exit_code());
+    printf("** process %d exited with code %d **\n", clee_pid(), clee_exit_code());
 }
 
 int main(int argc, char **argv, char **envp) {
     int param_opt;
-    while ((param_opt = getopt(argc, argv, "abcq")) != -1) {
+    while ((param_opt = getopt(argc, argv, "abcqh")) != -1) {
         switch (param_opt) {
             case 'a':
                 option_write_stdout = true;
@@ -45,6 +63,9 @@ int main(int argc, char **argv, char **envp) {
     }
 
     clee_init();
+    clee_set_trigger(exited, onExit);
+    clee_set_trigger(syscall_entry, onSyscallEntry);
+    clee_set_trigger(syscall_exit, onSyscallExit);
     clee(argv[optind], argv + optind, envp);
 
     return 0;

@@ -136,6 +136,10 @@ reg clee_syscall_num() {
     return syscall_regs.orig_rax;
 }
 
+void clee_syscall_set(reg value) {
+    syscall_regs.orig_rax = value;
+}
+
 const char* clee_syscall_name() {
     return clee_syscall_namelookup(syscall_regs.orig_rax);
 }
