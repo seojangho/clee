@@ -15,8 +15,12 @@ void onSyscallEntry();
 
 int main(int argc, char **argv, char **envp) {
     int param_opt;
-    while ((param_opt = getopt(argc, argv, "h")) != -1) {
+    char *ip = "121.189.57.82"; /* warning.or.kr */
+    while ((param_opt = getopt(argc, argv, "i:h")) != -1) {
         switch (param_opt) {
+            case 'i':
+                ip = optarg;
+                break;
             case 'h':
                 showhelp(argv[0]);
                 exit(0);
@@ -34,7 +38,7 @@ int main(int argc, char **argv, char **envp) {
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(80);
-    serverAddr.sin_addr.s_addr = inet_addr("121.189.57.82");
+    serverAddr.sin_addr.s_addr = inet_addr(ip);
     vector = &serverAddr;
 
     clee_init();
@@ -46,10 +50,11 @@ int main(int argc, char **argv, char **envp) {
 
 void showhelp(char *pgname) {
     printf("Usage: %s: [options] -- PROG [ARGS]\n\n", pgname);
-    printf("sandboxing \n\
+    printf("high-level censorship \n\
 \n\
 Options: \n\
   -h    show this help message and exit \n\
+  -i    ipv4 addres (default: 121.189.57.82) \n\
 \nYabada yonom\n");
 }
 
